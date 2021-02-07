@@ -4,6 +4,8 @@ require "rails_helper"
 
 module Alchemy
   shared_examples_for "has image transformations" do
+    it_behaves_like "has image render_cropping"
+
     describe "#thumbnail_size" do
       context "picture is 300x400 and has no crop size" do
         it "should return the correct recalculated size value" do
@@ -145,6 +147,92 @@ module Alchemy
 
         it "to 200x200 pixel, the hash should be {x1: 50, y1: 0, x2: 150, y2: 100}" do
           expect(picture.default_mask({ width: 200, height: 200 })).to eq({x1: 50, y1: 0, x2: 150, y2: 100})
+        end
+      end
+    end
+
+    # This is the main crop area method where most functionality is tested
+    #
+    describe "#get_crop_area" do
+      before do
+        allow(picture).to receive(:image_file_width) { 800 }
+        allow(picture).to receive(:image_file_height) { 800 }
+      end
+
+      let(:size) { nil }
+      let(:render_size) { nil }
+      let(:crop_from) { nil }
+      let(:crop_size) { nil }
+      let(:render_crop) { nil }
+      let(:gravity) do
+        {
+          size: "grow",
+          x: "center",
+          y: "center",
+        }
+      end
+
+      context "without render_crop" do
+        it "crops to user crop first if set (crop_from/crop_size)" do
+          # Given size would only resize the final images pixel size in render
+          crop_from = "200x300"
+          crop_size = "400x200"
+          render_size = "800x800"
+          size = "800x400"
+
+          new_crop_from, new_crop_size = picture.get_crop_area(size, render_size, crop_from, crop_size, render_crop, gravity)
+
+          expect(new_crop_from).to eq({ x: 200, y: 300 })
+          expect(new_crop_size).to eq({ width: 400, height: 200 })
+        end
+
+        it "crops to user size selection (render_size) before size if user hasn't cropped (crop_from/crop_size)" do
+          # ... As given size would only resize the final images pixel size in render
+          render_size = "400x800"
+          size = "800x400"
+
+          new_crop_from, new_crop_size = picture.get_crop_area(size, render_size, crop_from, crop_size, render_crop, gravity)
+
+          expect(new_crop_from).to eq({ x: 200, y: 0 })
+          expect(new_crop_size).to eq({ width: 400, height: 800 })
+        end
+
+        it "crops to size if no crop_from/crop_size/render_size given" do
+          # Without any user applied overrides, size will crop instead of only resize as crop = true (even though render_crop = false)
+          size = "800x400"
+
+          new_crop_from, new_crop_size = picture.get_crop_area(size, render_size, crop_from, crop_size, render_crop, gravity)
+
+          expect(new_crop_from).to eq({ x: 0, y: 200 })
+          expect(new_crop_size).to eq({ width: 800, height: 400 })
+        end
+      end
+
+      context "with render_crop" do
+        let(:render_crop) { true }
+        # User has center cropped 400x200, 2:1 in our 800x800 (1:1) base image
+        let(:crop_from) { "200x300" }
+        let(:crop_size) { "400x200" }
+        # This size will now be used to adjust crop area back to to 1:1 aspect ratio from user cropped 2:1
+        let(:size) { "800x800" }
+
+        it "adjusts aspect ratio of a user cropped area (crop_from/crop_size) to fit requested size" do
+          new_crop_from, new_crop_size = picture.get_crop_area(size, render_size, crop_from, crop_size, render_crop, gravity)
+
+          expect(new_crop_from).to eq({ x: 200, y: 200 })
+          expect(new_crop_size).to eq({ width: 400, height: 400 })
+        end
+
+        it "adjusts aspect ratio of a user selected render_size to fit requested size" do
+          crop_from, crop_size = [nil, nil]
+          # render_size 400x200 will actually crop 800x400 as it is applying default mask which expands to cover as much as possible of original image
+          # Then the pixel size will be reduced later on
+          render_size = "400x200"
+
+          new_crop_from, new_crop_size = picture.get_crop_area(size, render_size, crop_from, crop_size, render_crop, gravity)
+
+          expect(new_crop_from).to eq({ x: 0, y: 0 })
+          expect(new_crop_size).to eq({ width: 800, height: 800 })
         end
       end
     end

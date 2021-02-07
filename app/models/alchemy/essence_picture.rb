@@ -30,6 +30,9 @@ module Alchemy
       optional: true,
     }
 
+    serialize :render_gravity, JSON
+    validate :validate_render_gravity
+
     delegate :image_file_width, :image_file_height, :image_file, to: :picture
     before_save :fix_crop_values
     before_save :replace_newlines
@@ -130,6 +133,25 @@ module Alchemy
       point_and_mask_to_points(crop_from, crop_size)
     end
 
+    # Returns the gravity that will be used in render with correct fallbacks and validations.
+    # see render_crop.rb for more information.
+    #
+    def gravity(gravity_override = nil)
+      gravity = {}
+
+      # settings_gravity = true would not alter default gravity but allow users to edit it in essence_picture/edit
+      settings_gravity = content.settings[:gravity] == true ? nil : content.settings[:gravity]
+
+      # Here we allow gravity to be overwritten in correct order of priority
+      # render_gravity comes from db (essence_picture/edit), gravity_override from render
+      [default_gravity, settings_gravity, render_gravity, gravity_override].each do |g|
+        validate_gravity(g) # Will raise if invalid
+        gravity.merge!(g.symbolize_keys) unless g.nil?
+      end
+
+      gravity
+    end
+
     # Returns a serialized ingredient value for json api
     #
     # @return [String]
@@ -158,6 +180,14 @@ module Alchemy
           write_attribute crop_value, normalize_crop_value(crop_value)
         end
       end
+    end
+
+    # Validates render_gravity db column
+    #
+    def validate_render_gravity
+      validate_gravity(render_gravity)
+      rescue ArgumentError
+        errors.add(:render_gravity, :invalid)
     end
 
     def normalize_crop_value(crop_value)

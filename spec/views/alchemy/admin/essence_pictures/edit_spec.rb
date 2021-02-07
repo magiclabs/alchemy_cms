@@ -51,4 +51,16 @@ describe "alchemy/admin/essence_pictures/edit.html.erb" do
 
     expect(rendered).to_not have_selector(".input.essence_picture_render_size")
   end
+
+  it "displays gravity selection if gravity setting present" do
+    allow(content).to receive(:settings).and_return({
+      gravity: true, # Could also be a hash that overrides default_gravity
+    })
+
+    render
+
+    expect(rendered).to have_selector(".input.essence_picture_render_gravity_size")
+    expect(rendered).to have_selector(".input.essence_picture_render_gravity_x")
+    expect(rendered).to have_selector(".input.essence_picture_render_gravity_y")
+  end
 end

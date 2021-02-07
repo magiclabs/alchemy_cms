@@ -31,7 +31,9 @@ module Alchemy
       end
 
       def update
-        @essence_picture.update(essence_picture_params)
+        unless @essence_picture.update(essence_picture_params)
+          render json: @essence_picture.errors, status: 400
+        end
       end
 
       # Assigns picture, but does not save it.
@@ -106,8 +108,22 @@ module Alchemy
         end
       end
 
+      # Remove any blanks from render_gravity param hash,
+      # if all blank, set render_gravity=nil
+      #
+      def fix_render_gravity_params(essence_picture_params)
+        essence_picture_params[:render_gravity] = essence_picture_params[:render_gravity]
+          &.delete_if { |_k, v| v.blank? }.presence
+
+        essence_picture_params
+      end
+
       def essence_picture_params
-        params.require(:essence_picture).permit(:alt_tag, :caption, :css_class, :render_size, :title, :crop_from, :crop_size)
+        essence_picture_params = params.require(:essence_picture).permit(:alt_tag, :caption, :css_class, :render_size, :title, :crop_from, :crop_size, render_gravity: [:size, :x, :y])
+
+        essence_picture_params = fix_render_gravity_params(essence_picture_params)
+
+        essence_picture_params
       end
     end
   end

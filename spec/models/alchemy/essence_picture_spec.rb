@@ -294,6 +294,92 @@ module Alchemy
       end
     end
 
+    describe "#gravity" do
+      let(:content) { Content.new }
+      let(:picture) { mock_model(Picture, name: "Cute Cat Kittens") }
+      let(:essence) { EssencePicture.new(content: content, picture: picture) }
+
+      let(:settings) do
+        {
+          gravity: {
+            size: "closest_fit",
+            x: "right",
+            y: "bottom",
+          },
+        }
+      end
+
+      it "returns gravity_override if specified" do
+        allow(essence).to receive(:render_gravity) { { size: "grow", x: "left", y: "top" } }
+        allow(content).to receive(:settings) { settings } # This will not apply
+        expect(essence.gravity({
+          size: "shrink",
+          x: "right",
+          y: "top",
+        })).to eq({
+          size: "shrink",
+          x: "right",
+          y: "top",
+        })
+      end
+
+      it "returns gravity from db if gravity_override not specified" do
+        allow(essence).to receive(:render_gravity) { { size: "grow", x: "left", y: "top" } }
+        allow(content).to receive(:settings) { settings } # This will not apply
+        expect(essence.gravity).to eq({
+          size: "grow",
+          x: "left",
+          y: "top",
+        })
+      end
+
+      it "returns gravity from settings if no gravity_override/render_gravity specified" do
+        allow(content).to receive(:settings) { settings } # This will not apply
+        expect(essence.gravity).to eq({
+          size: "closest_fit",
+          x: "right",
+          y: "bottom",
+        })
+      end
+
+      it "returns default gravity if no gravity_override/render_gravity/settings gravity specified" do
+        expect(essence.gravity).to eq(essence.default_gravity)
+      end
+
+      it "returns default gravity if settings gravity is true" do
+        # This is specified to allow users to edit gravity in essence_picture/edit
+        allow(content).to receive(:settings) { { gravity: true } }
+
+        expect(essence.gravity).to eq({
+          size: "grow",
+          x: "center",
+          y: "center",
+        })
+      end
+
+      it "validates each gravity provided" do
+        expect(essence).to receive(:validate_gravity).exactly(4).times
+        essence.gravity
+      end
+    end
+
+    describe "#validate_render_gravity" do
+      let(:content) { Content.new }
+      let(:essence) { EssencePicture.new(content: content) }
+
+      it "adds validation error if render_gravity invalid" do
+        essence.render_gravity = { x: "unknown" } # invalid gravity
+        essence.valid? # run validations
+        expect(essence.errors[:render_gravity]).to include("is invalid")
+      end
+
+      it "does not add validation error if render_gravity valid" do
+        essence.render_gravity = { x: "left" }
+        essence.valid? # run validations
+        expect(essence.errors[:render_gravity]).not_to include("is invalid")
+      end
+    end
+
     describe "#preview_text" do
       let(:picture) { mock_model(Picture, name: "Cute Cat Kittens") }
       let(:essence) { EssencePicture.new }
