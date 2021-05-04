@@ -7,13 +7,14 @@ module Alchemy
       authorize_resource class: Alchemy::EssencePicture
 
       before_action :load_essence_picture, only: [:edit, :crop, :update]
-      before_action :load_content, only: [:edit, :update, :assign]
+      before_action :load_content, only: [:update, :assign]
 
       helper "alchemy/admin/contents"
       helper "alchemy/admin/essences"
       helper "alchemy/url"
 
       def edit
+        @content = @essence_picture.content
       end
 
       def crop
@@ -41,8 +42,6 @@ module Alchemy
       def assign
         @picture = Picture.find_by(id: params[:picture_id])
         @content.essence.picture = @picture
-        @element = @content.element
-
         # We need to update timestamp here because we don't save yet,
         # but the cache needs to be get invalid.
         @content.touch

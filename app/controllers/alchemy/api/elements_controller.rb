@@ -25,7 +25,7 @@ module Alchemy
       end
       @elements = @elements.includes(*element_includes).order(:position)
 
-      render json: @elements, adapter: :json, root: "elements"
+      render json: @elements.order(:position), adapter: :json, root: "elements"
     end
 
     # Returns a json object for element

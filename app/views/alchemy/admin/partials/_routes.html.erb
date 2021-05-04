@@ -1,8 +1,63 @@
 <script>
   Alchemy.routes = {
 
+    edit_admin_essence_file_path: function(id) {
+      return '<%= alchemy.edit_admin_essence_file_path(id: 'eid') %>'.replace(/eid/, id);
+    },
+
+    edit_admin_essence_picture_path: function(id) {
+      return '<%= alchemy.edit_admin_essence_picture_path(id: 'eid') %>'.replace(/eid/, id);
+    },
+
+    crop_admin_essence_picture_path: function(id) {
+      return '<%= alchemy.crop_admin_essence_picture_path(id: 'eid') %>'.replace(/eid/, id);
+    },
+
+    admin_attachments_path: function(id) {
+      return '<%= alchemy.admin_attachments_path(content_id: 'cid') %>'.replace(/cid/, id);
+    },
+
+    admin_pictures_path: function(id) {
+      return '<%= alchemy.admin_pictures_path(content_id: 'cid') %>'.replace(/cid/, id);
+    },
+
     admin_picture_path: function(id) {
       return '<%= alchemy.admin_picture_path(id: 1) %>'.replace(/1/, id);
+    },
+
+    new_admin_element_path: function(page_id, parent_element_id) {
+      var url = '<%= alchemy.new_admin_element_path %>';
+      if (page_id) {
+        url += '?page_id=' + page_id;
+        if (parent_element_id) url += '&parent_element_id=' + parent_element_id;
+      }
+      return url;
+    },
+
+    admin_clipboard_path: function(remarkable_type) {
+      var url = '<%= alchemy.admin_clipboard_path %>';
+      if (remarkable_type) url += '?remarkable_type=' + remarkable_type;
+      return url;
+    },
+
+    copy_admin_element_path(id) {
+      return '<%== alchemy.insert_admin_clipboard_path(
+        remarkable_type: 'elements',
+        remarkable_id: 'eid') %>'.replace(/eid/, id);
+    },
+
+    cut_admin_element_path(id) {
+      return '<%== alchemy.insert_admin_clipboard_path(
+        remarkable_type: 'elements',
+        remarkable_id: 'eid', remove: true) %>'.replace(/eid/, id);
+    },
+
+    destroy_admin_element_path(id) {
+      return '<%= alchemy.admin_element_path(id: 'eid') %>'.replace(/eid/, id);
+    },
+
+    publish_admin_element_path(id) {
+      return '<%= alchemy.publish_admin_element_path(id: 'eid') %>'.replace(/eid/, id);
     },
 
     fold_admin_element_path: function(id) {
@@ -17,6 +72,10 @@
       move_api_path: function(id) {
         return '<%= alchemy.move_api_node_path(id: 1) %>'.replace(/1/, id);
       },
+    },
+
+    admin_element_path: function(id) {
+      return '<%= alchemy.admin_element_path(id: 'eid') %>'.replace(/eid/, id);
     },
 
     order_admin_elements_path: '<%= alchemy.order_admin_elements_path %>',
