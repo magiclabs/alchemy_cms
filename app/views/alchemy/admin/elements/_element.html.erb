@@ -25,7 +25,24 @@
         <div id="element_<%= element.id %>_errors" class="element_errors"></div>
 
         <div id="element_<%= element.id %>_content" class="element-content-editors">
-          <%= render element.contents %>
+          <% element.contents.select { |c| c.definition[:group].blank? }.each do |content| %>
+            <%= render content %>
+          <% end %>
+
+          <!-- Each content group -->
+          <% element.contents.map { |c| c.definition[:group] }.compact.uniq.each do |group| %>
+            <div class="content-group">
+              <%= link_to '#', id: "content_group_#{group.parameterize.underscore}_header", class: 'content-group-header', data: { toggle_content_group: true } do %>
+                <i class="content-group-expand icon fa-fw fa-plus fas" />
+                <%= group %>
+              <% end %>
+              <%= content_tag :div, id: "element_#{element.id}_content_group_#{group.parameterize.underscore}", class: 'content-group-contents' do %>
+                <% element.contents.select { |c| c.definition[:group] == group }.each do |content| %>
+                  <%= render content %>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
         </div>
 
         <% if element.taggable? %>
@@ -77,3 +94,12 @@
     </div>
   <% end %>
 <% end %>
+
+<!-- <script type='application/javascript'>
+  $(function() {
+    $(document).on('click', '.content-group-header', function() {
+      $(this).parent().toggleClass('expanded');
+      return false;
+    });
+  })
+</script> -->
